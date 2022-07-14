@@ -139,7 +139,7 @@ def find_white_line(img):
     cv2.imshow("cam", out_img)
     cv2.waitKey(1)
 
-    line_x = np.int(np.mean(line_x))
+    line_x = SET_WIDTH/2 - np.int(np.mean(line_x))
 
     return line_x, lmark, rmark
 
