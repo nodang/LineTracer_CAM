@@ -1,2 +1,8 @@
 Compiler/
 __pycache__/
+
+*.asm
+*.hex
+*.out
+*.map
+*.obj
