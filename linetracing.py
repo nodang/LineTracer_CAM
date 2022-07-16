@@ -3,11 +3,12 @@
 
 import numpy as np
 import cv2, math
-import signal
-import sys
-import os
+import signal, sys, os
+
+from sci import Sci
 #============================================================================#
 def signal_handler(sig, frame):
+    s.read_thread_destroy()
     cap.release()
     cv2.destroyAllWindows()
     print("\ntracing exit\n")
@@ -17,11 +18,13 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 #============================================================================#
 cap = cv2.VideoCapture(0)
+s = Sci()
 
 ORIGIN_WIDTH, ORIGIN_HEIGHT = 640, 480
 DIVISION_COEF = 2
 SET_WIDTH = ORIGIN_WIDTH//DIVISION_COEF
 SET_HEIGHT = ORIGIN_HEIGHT//DIVISION_COEF
+CROPPED_H = SET_HEIGHT/2
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, SET_WIDTH)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, SET_HEIGHT)
@@ -34,7 +37,7 @@ REAL_WIDTH = 2*CAM_HEIGHT*np.tan(HORIZONTAL/2)
 
 DIST_PER_PIX_W = REAL_WIDTH/SET_WIDTH
 LINE_PIX_W_MAX, LINE_PIX_W_MIN = 30//DIST_PER_PIX_W, 10//DIST_PER_PIX_W
-TRUNMAKR_WIDTH, TRUNMAKR_HEIGHT = 50//DIST_PER_PIX_W, 20//DIST_PER_PIX_W
+TURNMAKR_WIDTH, TURNMAKR_HEIGHT = 50//DIST_PER_PIX_W, 20//DIST_PER_PIX_W
 LINE_MARGIN = 25//DIST_PER_PIX_W    #200 / 2
 BLANK_MARGIN = 10//DIST_PER_PIX_W
 TRUNMARK_MARGIN = 80//DIST_PER_PIX_W
@@ -43,18 +46,18 @@ def tell_turnmark(inds, cross):
     if cross == 1:
         return 0
     else:
-        height = np.int(len(inds)/TRUNMAKR_WIDTH)
+        height = len(inds)/TURNMAKR_WIDTH
 
-        if height >= 2*TRUNMAKR_HEIGHT:
-            return 2
-        elif height >= 1*TRUNMAKR_HEIGHT:
+        if height > TURNMAKR_HEIGHT*0.5 and height <= TURNMAKR_HEIGHT*1.5:
             return 1
+        elif height > TURNMAKR_HEIGHT*1.5 and height <= TURNMAKR_HEIGHT*2.5:
+            return 2
         else:
             return 0
-    
 
 def find_white_line(img):
-    blur_img = cv2.GaussianBlur(img, (5, 5), 0)
+    cropped = frame[0:np.int(CROPPED_H), 0:np.int(SET_WIDTH)].copy()
+    blur_img = cv2.GaussianBlur(cropped, (5, 5), 0)
     _, hls_l, _ = cv2.split(cv2.cvtColor(blur_img, cv2.COLOR_BGR2HLS))
     _, hls_l = cv2.threshold(hls_l, 207, 255, cv2.THRESH_BINARY)
 
@@ -139,18 +142,23 @@ def find_white_line(img):
     cv2.imshow("cam", out_img)
     cv2.waitKey(1)
 
-    line_x = SET_WIDTH/2 - np.int(np.mean(line_x))
+    line_x = SET_WIDTH/2 - np.mean(line_x)
+    line_x = np.int(line_x*100)
 
     return line_x, lmark, rmark
 
 def main():
     global cap
 
+    s.read_thread_create()
     while cap.isOpened():
         ret, frame = cap.read()
-
+        
         pos, lmark, rmark = find_white_line(frame)
         print(lmark, pos, rmark)
+
+        data = np.str(lmark) + ',' + np.str(pos) + ',' + np.str(rmark)
+        #s.write(data)
 
 if __name__ == '__main__':
     main()
