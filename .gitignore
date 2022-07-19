@@ -5,6 +5,6 @@ __pycache__/
 *.out
 *.hex
 *.map
-*.obg
+*.obj
 *.asm
 *.CF3
