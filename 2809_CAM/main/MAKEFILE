@@ -1,0 +1,75 @@
+###########################################################################
+#
+# FILE		: Makefile
+#
+# TITLE		: Makefile.
+#
+# Author	: Yuk Keun Ho
+#
+# Company	: MAZE
+#
+###########################################################################
+# $Release Date: 2011.10.5 $
+###########################################################################
+
+# makefile for DSP28x
+# By RealSYS	2003/9/18
+
+#----- out file name -----
+TARGET = a_cam_tracer
+
+#----- path_dir -------
+PATH = ..
+#----- C source files -----
+INCLUDE = ..\include
+SRC = DSP280x_Adc.c DSP280x_EPwm.c DSP280x_EQep.c DSP280x_CpuTimers.c DSP280x_DefaultIsr.c DSP280x_GlobalVariableDefs.c DSP280x_Gpio.c DSP280x_MemCopy.c DSP280x_PieCtrl.c	DSP280x_PieVect.c DSP280x_Sci.c DSP280x_Spi.c DSP280x_SysCtrl.c Main.c Menu.c VFD.c Motor.c Rom.c Sensor.c Search.c Fastrun.c Extremerun.c
+
+#----- ASM source files -----
+ASRC =DSP280x_CodeStartBranch.asm DSP280x_usDelay.asm
+
+#----- command file -----
+CMDFILE	= DSP280x_Headers_nonBIOS.cmd F2808.cmd
+
+#----- Compiler directory & exe files -----
+PROG_DIR = $(PATH)\Compiler\bin
+CC      = $(PROG_DIR)\cl2000.exe
+ASM     = $(PROG_DIR)\asm2000.exe
+LNK     = $(PROG_DIR)\lnk2000.exe
+
+OBJS = $(SRC:.c=.obj) $(ASRC:.asm=.obj)
+
+#----- C compiler option -----
+#C_OPT = -g -s -k -d"LARGE_MODEL" -ml -v28
+C_OPT = -g -s -k -pm -op0 -o3 -d"LARGE_MODEL" -mf -ml -v28 -i$(INCLUDE)
+
+
+#----- Assembler option -----
+ASM_OPT = -v28 
+
+#----- Link option -----
+#LNK_OPT = -w -heap1 -o$(TARGET).out -m$(TARGET).map $(OBJS) $(CMDFILE) -l C:\Users\kywzoro\Desktop\FinAl_VArHAe_08\Compiler\lib\rts2800_ml.lib C:\Users\kywzoro\Desktop\FinAl_VArHAe_08\Compiler\lib\IQmath.lib 
+#LNK_OPT = -c -farheap0x700 -heap0x01 -o$(TARGET).out -m$(TARGET).map $(OBJS) $(CMDFILE) -stack0x600 -w -x -l C:\Users\kywzoro\Desktop\FinAl_VArHAe_08\Compiler\lib\rts2800_ml.lib C:\Users\kywzoro\Desktop\FinAl_VArHAe_08\Compiler\lib\IQmath.lib 
+LNK_OPT = -c -farheap0x700 -heap0x01 -o$(TARGET).out -m$(TARGET).map $(OBJS) $(CMDFILE) -stack0x600 -w -x -l $(PATH)\Compiler\lib\rts2800_ml.lib $(PATH)\Compiler\lib\IQmath.lib 
+
+# Compile: create object files from C source files.
+%.obj : %.c
+	$(CC) $(C_OPT) $<
+	
+# Assemble: create object files from assembler source files.
+%.obj : %.asm
+	$(ASM) $(ASM_OPT) $<
+
+# Link: create coff output file from object files.
+.SECONDARY : $(TARGET).out
+.PRECIOUS : $(OBJS)
+%.out: $(OBJS) $(CMD_FILE)
+	$(LNK) $(LNK_OPT) $<
+
+# Default target.
+all: $(TARGET).out
+
+# Target: clean project.
+clean: 
+	del *.out
+	del *.map
+	del *.obj
