@@ -1,2 +1,10 @@
 Compiler/
+Si/
 __pycache__/
+
+*.out
+*.hex
+*.map
+*.obg
+*.asm
+*.CF3
