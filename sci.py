@@ -10,7 +10,8 @@ class Sci:
         self.line = ''
 
     def write(self, data):
-        word = '*' + data + '\n'
+        #word = '*' + data + '\n'
+        word = data
         trans = word.encode('utf-8')
         self.ser.write(trans)
 
@@ -20,7 +21,7 @@ class Sci:
                 print(self.line)
                 self.line = ''
             else:
-                line = line + (chr(c))
+                self.line = self.line + (chr(c))
 
     def sci_close(self):
         self.ser.close()

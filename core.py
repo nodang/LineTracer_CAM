@@ -47,6 +47,8 @@ sci_rd_th = thrd("sci_read")
 
 def signal_handler(sig, frame):
     sci_rd_th.thread_destroy()
+    data = '*' + str(0) + ',' + str(0) + '\n'
+    sc.write(data)
     sc.sci_close()
     lt.linetracing_close()
     print("\ncore exit\n")
@@ -58,11 +60,12 @@ signal.signal(signal.SIGINT, signal_handler)
 def main():
     sci_rd_th.thread_start(sc.read)
 
-    sci_rd_th.write('g')
+    sc.write('g')
     
     while True:
-        data = lt.linetracing_open()
-        sci_rd_th.write(data)
+        data = lt.linetracing_open(150)
+        data = '*' + data + '\n'
+        sc.write(data)
 
     sci_rd_th.thread_destroy()
 

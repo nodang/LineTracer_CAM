@@ -3,15 +3,15 @@
 
 import numpy as np
 import cv2, math
-import signal, sys, os
+import signal, sys, os, time
 #============================================================================#
 ORIGIN_WIDTH, ORIGIN_HEIGHT = 640, 480
-DIVISION_COEF = 2
+DIVISION_COEF = 4
 SET_WIDTH = ORIGIN_WIDTH//DIVISION_COEF
 SET_HEIGHT = ORIGIN_HEIGHT//DIVISION_COEF
 CROPPED_H = SET_HEIGHT/2
 
-CAM_HEIGHT = 250
+CAM_HEIGHT = 270
 DEG_TO_RAD = math.pi/180
 HORIZONTAL, VERTICAL = 62.2*DEG_TO_RAD, 48.8*DEG_TO_RAD
 REAL_WIDTH = 2*CAM_HEIGHT*np.tan(HORIZONTAL/2)
@@ -30,6 +30,10 @@ class trace:
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, SET_WIDTH)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, SET_HEIGHT)
 
+        self.start_flag = 0
+        self.turn_flag = 0
+        self.save_time = time.time()
+
     def tell_turnmark(self, inds, cross):
         if cross == 1:
             return 0
@@ -37,10 +41,15 @@ class trace:
             height = len(inds)/TURNMAKR_WIDTH
 
             if height > TURNMAKR_HEIGHT*0.5 and height <= TURNMAKR_HEIGHT*1.5:
+                self.turn_flag = 1
+                self.save_time = time.time()
                 return 1
             elif height > TURNMAKR_HEIGHT*1.5 and height <= TURNMAKR_HEIGHT*2.5:
+                self.turn_flag = 1
+                self.save_time = time.time()
                 return 2
             else:
+                self.turn_flag = 0
                 return 0
 
     def find_white_line(self, img):
@@ -120,8 +129,17 @@ class trace:
         lmark_inds = np.concatenate(lmark_inds)
         rmark_inds = np.concatenate(rmark_inds)
 
-        lmark = self.tell_turnmark(lmark_inds, cross)
-        rmark = self.tell_turnmark(rmark_inds, cross)
+        mark_stop_time = 2
+        if abs(self.save_time - time.time()) > mark_stop_time\
+           and self.turn_flag == 1:
+            lmark = 0
+            rmark = 0
+            self.turn_flag = 0
+        elif self.turn_flag == 0:
+            lmark = self.tell_turnmark(lmark_inds, cross)
+            rmark = self.tell_turnmark(rmark_inds, cross)
+        else:
+            lmark, rmark = 0, 0
 
         out_img[nz[0][line_inds], nz[1][line_inds]] = (0, 0, 255)
         out_img[nz[0][lmark_inds], nz[1][lmark_inds]] = (0, 255, 0)
@@ -131,18 +149,38 @@ class trace:
         cv2.waitKey(1)
 
         line_x = SET_WIDTH/2 - np.mean(line_x)
-        line_x = np.int(line_x*100)
+        line_x = np.int(line_x)
 
         return line_x, lmark, rmark
 
-    def linetracing_open(self):
+    def decide_val_from_turnmark(self, goal_val, left_mark, right_mark):
+        if self.start_flag == 2:
+            val = 0
+        elif left_mark == 1 and right_mark == 1:
+            if self.start_flag == 1:
+                self.start_flag = 2
+                val = 0
+            else:    
+                self.start_flag = 1
+                val = goal_val
+        else:
+            val = goal_val
+
+        return val
+
+    def linetracing_open(self, goal_val):
         if self.cap.isOpened():
             ret, frame = self.cap.read()
             
             pos, lmark, rmark = self.find_white_line(frame)
-            #print(lmark, pos, rmark)
+           
+            #data = np.str(lmark) + ',' + np.str(pos) + ',' + np.str(rmark)
+            val = self.decide_val_from_turnmark(goal_val, lmark, rmark)
+            #val = goal_val
+            print(lmark, pos, rmark, self.turn_flag, self.start_flag, val)
 
-            data = np.str(lmark) + ',' + np.str(pos) + ',' + np.str(rmark)
+            data = str(pos) + ',' + str(val)
+
 
             return data
     
