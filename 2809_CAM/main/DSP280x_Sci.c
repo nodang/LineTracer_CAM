@@ -111,7 +111,7 @@ interrupt void sci_ISR(void)
 	{
 		sscanf((char *)sd.buf, "*%ld,%ld\n", &sd.position_i32, &sd.velocity_i32);
 
-		//TxPrintf("%ld	%ld", sd.position_i32, sd.velocity_i32);
+		//TxPrintf("%ld	%ld", sd.d, sd.velocity_i32);
 
 		memset((void *)sd.buf, 0x00, sizeof(unsigned char)*128);
 	}

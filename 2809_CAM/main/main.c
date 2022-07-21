@@ -53,8 +53,8 @@ void main(void)
 
 	while( 1 )
 	{
-		//TxPrintf("rm: %u	lm: %u\n", EPwm1Regs.CMPA.half.CMPA, EPwm3Regs.CMPA.half.CMPA);
-		//DELAY_US(10000);
+		TxPrintf("rm: %u	lm: %u\n", EPwm1Regs.CMPA.half.CMPA, EPwm3Regs.CMPA.half.CMPA);
+		DELAY_US(10000);
 	}
 
 	

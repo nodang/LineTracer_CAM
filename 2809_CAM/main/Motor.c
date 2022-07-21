@@ -20,7 +20,8 @@
 #include "Main.h"
 #include "Motor.h"
 
-#define MAX_PWM_VAL	2500
+#define MAX_PWM_VAL		2500
+#define LIMIT_PWM_VAL	1250
 
 #define RIGHT_DIR	0x00000002		// 0000 0000 0000 0000  0000 0000 0000 0010
 #define LEFT_DIR	0x00000020		// 0000 0000 0000 0000  0000 0000 0010 0000
@@ -43,8 +44,8 @@
 
 #define LIMIT_VAL(x)															\
 	do {																		\
-		if(x > _IQ17(MAX_PWM_VAL))			x = _IQ17(MAX_PWM_VAL);				\
-		else if(x < -_IQ17(MAX_PWM_VAL))	x = -_IQ17(MAX_PWM_VAL);			\
+		if(x > _IQ17(LIMIT_PWM_VAL))			x = _IQ17(LIMIT_PWM_VAL);		\
+		else if(x < -_IQ17(LIMIT_PWM_VAL))		x = -_IQ17(LIMIT_PWM_VAL);		\
 	} while(0)
 
 static void _motor_struct_init(MotorData *p_motor);
@@ -64,9 +65,10 @@ void motor_init(void)
 
 	_motor_struct_init(&rmotor);
 	_motor_struct_init(&lmotor);
-
-	//sd.velocity_i32 = 500;
-	//sd.position_i32 = -10;
+#if 0
+	sd.velocity_i32 = 500;
+	sd.position_i32 = -10;
+#endif
 }
 
 static void _motor_struct_init(MotorData *p_motor)
@@ -76,8 +78,8 @@ static void _motor_struct_init(MotorData *p_motor)
 
 	p_motor->gain = _IQ17(0.0);
 
-	p_motor->pos_acc = _IQ17(0.05);
-	p_motor->pos_dec = _IQ17(0.05);
+	p_motor->pos_acc = _IQ17(0.5);
+	p_motor->pos_dec = _IQ17(1.5);
 }
 
 static void _motor_handle(void)
@@ -89,11 +91,15 @@ static void _motor_handle(void)
 	{
 		rmotor.gain = _IQ17(1.0) + _IQ17mpy(sci_pos, rmotor.pos_acc);
 		lmotor.gain = _IQ17(1.0) - _IQ17mpy(sci_pos, lmotor.pos_dec);
+
+		if(lmotor.gain < _IQ17(0.0))	lmotor.gain = _IQ17(0.0);
 	}
 	else if(sci_pos < _IQ17(0.0))
 	{
 		rmotor.gain = _IQ17(1.0) + _IQ17mpy(sci_pos, rmotor.pos_dec);
 		lmotor.gain = _IQ17(1.0) - _IQ17mpy(sci_pos, lmotor.pos_acc);
+
+		if(rmotor.gain < _IQ17(0.0))	rmotor.gain = _IQ17(0.0);
 	}
 	else
 	{
