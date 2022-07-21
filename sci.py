@@ -2,24 +2,25 @@
 # -*- coding: utf-8 -*-
 
 import serial
-import time, threading
+import sys, os, time, threading
 
 class Sci:
     def __init__(self):
-        self.ser = serial.Serial('/dev/ttyAMA1', 115200, timeout=3)
+        self.ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=3)
         self.line = ''
 
-    def write(self, data, flag):
+    def write(self, data):
         word = '*' + data + '\n'
         trans = word.encode('utf-8')
         self.ser.write(trans)
 
     def read(self):
         for c in self.ser.read():
-            self.line = self.line + (chr(c))
-            if self.line.startswith('[') and self.line.endswith(']'):
-                print('receive data=' + self.line)
+            if chr(c) == '\n':
+                print(self.line)
                 self.line = ''
+            else:
+                line = line + (chr(c))
 
     def sci_close(self):
         self.ser.close()
@@ -28,21 +29,25 @@ class Sci:
 #============================================================================#
 # test func
 #============================================================================#
+
 def readthread(ser):
     global alivethread
     global line
     line = ''
     while alivethread is True:
         for c in ser.read():
-            line = line + (chr(c))
-            if line.startswith('[') and line.endswith(']'):
-                print('receive data=' + line)
+            if chr(c) == '\n':
+                print(line)
                 line = ''
+            else:
+                line = line + (chr(c))
     print("readthread end")
-
+'''
 def test_main():
     global alivethread
     alivethread = True
+    global ser
+    ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=3)
 
     thread = threading.Thread(target=readthread, args=(ser,))
     thread.daemon = True
@@ -59,6 +64,20 @@ def test_main():
     alivethread = False
     thread.join()
     ser.close()
+'''
 
 if __name__ == '__main__':
-    test_main()
+    global alivethread, ser
+    alivethread = True
+    ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=3)
+
+    thread = threading.Thread(target=readthread, args=(ser,))
+    thread.daemon = True
+    thread.start()
+
+    try:
+        while 1:
+            time.sleep(1)
+    except:
+        os.system('killall -9 python')
+        sys.exit(0)

@@ -140,9 +140,11 @@ class trace:
             ret, frame = self.cap.read()
             
             pos, lmark, rmark = self.find_white_line(frame)
-            print(lmark, pos, rmark)
+            #print(lmark, pos, rmark)
 
             data = np.str(lmark) + ',' + np.str(pos) + ',' + np.str(rmark)
+
+            return data
     
     def linetracing_close(self):
         self.cap.release()

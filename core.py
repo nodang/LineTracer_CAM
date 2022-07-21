@@ -57,9 +57,12 @@ signal.signal(signal.SIGINT, signal_handler)
 
 def main():
     sci_rd_th.thread_start(sc.read)
+
+    sci_rd_th.write('g')
     
     while True:
-        lt.linetracing_open()
+        data = lt.linetracing_open()
+        sci_rd_th.write(data)
 
     sci_rd_th.thread_destroy()
 
