@@ -63,7 +63,7 @@ def main():
     sc.write('g')
     
     while True:
-        data = lt.linetracing_open(150)
+        data = lt.linetracing_open(150, debug=True)
         data = '*' + data + '\n'
         sc.write(data)
 

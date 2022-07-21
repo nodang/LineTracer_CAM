@@ -33,26 +33,51 @@ class trace:
         self.start_flag = 0
         self.turn_flag = 0
         self.save_time = time.time()
+        self.hold_time = 0
+        self.func_hold_time = 0
 
         self.debug = False
 
-    def tell_turnmark(self, inds, cross):
-        if cross == 1:
-            return 0
-        else:
-            height = len(inds)/TURNMAKR_WIDTH
+    def check_mark_height(self, inds):
+        height = len(inds)/TURNMAKR_WIDTH
 
-            if height > TURNMAKR_HEIGHT*0.5 and height <= TURNMAKR_HEIGHT*1.5:
-                self.turn_flag = 1
-                self.save_time = time.time()
-                return 1
-            elif height > TURNMAKR_HEIGHT*1.5 and height <= TURNMAKR_HEIGHT*2.5:
-                self.turn_flag = 1
-                self.save_time = time.time()
-                return 2
-            else:
+        if height > TURNMAKR_HEIGHT*0.5 and height <=\
+            TURNMAKR_HEIGHT*1.5:
+            
+            self.save_time = time.time()
+            return 1
+        elif height > TURNMAKR_HEIGHT*1.5 and height <=\
+                TURNMAKR_HEIGHT*2.5:
+
+            self.save_time = time.time()
+            return 2
+        else:
+            self.hold_time = 0
+            return 0
+
+    def tell_turnmark(self, l_inds, r_inds, cross):
+        if cross == 1:
+            return 0, 0
+        else:
+            if self.turn_flag == 1 and\
+               abs(self.save_time - time.time()) > self.func_hold_time:
+                
                 self.turn_flag = 0
-                return 0
+                self.func_hold_time = 0
+                self.hold_time = 2
+
+                lmark = self.check_mark_height(l_inds)
+                rmark = self.check_mark_height(r_inds)
+
+                return lmark, rmark
+
+            elif self.turn_flag == 0 and (len(l_inds) > 0 or len(r_inds) > 0):
+                self.turn_flag = 1
+                self.func_hold_time = 0.25
+                self.save_time = time.time()
+                return 0, 0
+            else:
+                return 0, 0
 
     def find_white_line(self, img):
         cropped = img[0:np.int(CROPPED_H), 0:np.int(SET_WIDTH)]
@@ -62,7 +87,9 @@ class trace:
 
         histogram = np.sum(hls_l[hls_l.shape[0]//2:, :], axis=0)
         current = np.argmax(histogram)
-        #print(histogram)
+
+        if current == 0:
+            self.start_flag = 2
 
         window_h = np.int(hls_l.shape[0]/12)
         line_pix_max = LINE_PIX_W_MAX*window_h
@@ -123,26 +150,17 @@ class trace:
             elif good_len >= line_pix_min and good_len <= line_pix_max:
                 current = np.int(np.mean(nz[1][good_inds]))
 
-            #print(line_pix_min, good_len, line_pix_max)
-
             line_x.append(current)
         
         line_inds = np.concatenate(line_inds)
         lmark_inds = np.concatenate(lmark_inds)
         rmark_inds = np.concatenate(rmark_inds)
 
-        mark_stop_time = 2
-        if abs(self.save_time - time.time()) > mark_stop_time\
-           and self.turn_flag == 1:
-            lmark = 0
-            rmark = 0
-            self.turn_flag = 0
-        elif self.turn_flag == 0:
-            lmark = self.tell_turnmark(lmark_inds, cross)
-            rmark = self.tell_turnmark(rmark_inds, cross)
+        if abs(self.save_time - time.time()) > self.hold_time:
+            lmark, rmark = self.tell_turnmark(lmark_inds, rmark_inds, cross)
         else:
             lmark, rmark = 0, 0
-
+        
         if self.debug == True:
             out_img[nz[0][line_inds], nz[1][line_inds]] = (0, 0, 255)
             out_img[nz[0][lmark_inds], nz[1][lmark_inds]] = (0, 255, 0)

@@ -17,6 +17,9 @@ class Sci:
 
     def read(self):
         for c in self.ser.read():
+            if chr(c) == '#':
+                self.write('g')
+                return
             if chr(c) == '\n':
                 print(self.line)
                 self.line = ''
