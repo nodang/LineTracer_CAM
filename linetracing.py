@@ -34,6 +34,8 @@ class trace:
         self.turn_flag = 0
         self.save_time = time.time()
 
+        self.debug = False
+
     def tell_turnmark(self, inds, cross):
         if cross == 1:
             return 0
@@ -141,12 +143,13 @@ class trace:
         else:
             lmark, rmark = 0, 0
 
-        out_img[nz[0][line_inds], nz[1][line_inds]] = (0, 0, 255)
-        out_img[nz[0][lmark_inds], nz[1][lmark_inds]] = (0, 255, 0)
-        out_img[nz[0][rmark_inds], nz[1][rmark_inds]] = (0, 255, 0)
+        if self.debug == True:
+            out_img[nz[0][line_inds], nz[1][line_inds]] = (0, 0, 255)
+            out_img[nz[0][lmark_inds], nz[1][lmark_inds]] = (0, 255, 0)
+            out_img[nz[0][rmark_inds], nz[1][rmark_inds]] = (0, 255, 0)
 
-        cv2.imshow("cam", out_img)
-        cv2.waitKey(1)
+            cv2.imshow("cam", out_img)
+            cv2.waitKey(1)
 
         line_x = SET_WIDTH/2 - np.mean(line_x)
         line_x = np.int(line_x)
@@ -168,19 +171,19 @@ class trace:
 
         return val
 
-    def linetracing_open(self, goal_val):
+    def linetracing_open(self, goal_val, debug=False):
         if self.cap.isOpened():
             ret, frame = self.cap.read()
-            
+            self.debug = debug
             pos, lmark, rmark = self.find_white_line(frame)
            
-            #data = np.str(lmark) + ',' + np.str(pos) + ',' + np.str(rmark)
+
             val = self.decide_val_from_turnmark(goal_val, lmark, rmark)
-            #val = goal_val
-            print(lmark, pos, rmark, self.turn_flag, self.start_flag, val)
+
+            if debug == True:
+                print(lmark, pos, rmark, self.turn_flag, self.start_flag, val)
 
             data = str(pos) + ',' + str(val)
-
 
             return data
     
