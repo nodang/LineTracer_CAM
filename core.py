@@ -52,7 +52,7 @@ def signal_handler(sig, frame):
     sc.sci_close()
     lt.linetracing_close()
     print("\ncore exit\n")
-    os.system('killall -9 python')
+    os.system('killall -9 python3')
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -63,7 +63,7 @@ def main():
     sc.write('g')
     
     while True:
-        data = lt.linetracing_open(150, debug=True)
+        data = lt.linetracing_open(200, debug=True)
         data = '*' + data + '\n'
         sc.write(data)
 

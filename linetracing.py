@@ -9,6 +9,7 @@ ORIGIN_WIDTH, ORIGIN_HEIGHT = 640, 480
 DIVISION_COEF = 4
 SET_WIDTH = ORIGIN_WIDTH//DIVISION_COEF
 SET_HEIGHT = ORIGIN_HEIGHT//DIVISION_COEF
+CROPPED_W = 30
 CROPPED_H = SET_HEIGHT/2
 
 CAM_HEIGHT = 270
@@ -36,6 +37,8 @@ class trace:
         self.hold_time = 0
         self.func_hold_time = 0
 
+        self.save_curr = 0
+
         self.debug = False
 
     def check_mark_height(self, inds):
@@ -43,13 +46,9 @@ class trace:
 
         if height > TURNMAKR_HEIGHT*0.5 and height <=\
             TURNMAKR_HEIGHT*1.5:
-            
-            self.save_time = time.time()
             return 1
         elif height > TURNMAKR_HEIGHT*1.5 and height <=\
                 TURNMAKR_HEIGHT*2.5:
-
-            self.save_time = time.time()
             return 2
         else:
             self.hold_time = 0
@@ -64,32 +63,34 @@ class trace:
                 
                 self.turn_flag = 0
                 self.func_hold_time = 0
-                self.hold_time = 2
 
                 lmark = self.check_mark_height(l_inds)
                 rmark = self.check_mark_height(r_inds)
+
+                if lmark != 0 or rmark != 0:
+                    self.hold_time = 0.5
+                    self.save_time = time.time()
+                else:
+                    self.hold_time = 0
 
                 return lmark, rmark
 
             elif self.turn_flag == 0 and (len(l_inds) > 0 or len(r_inds) > 0):
                 self.turn_flag = 1
-                self.func_hold_time = 0.25
+                self.func_hold_time = 0.05
                 self.save_time = time.time()
                 return 0, 0
             else:
                 return 0, 0
 
     def find_white_line(self, img):
-        cropped = img[0:np.int(CROPPED_H), 0:np.int(SET_WIDTH)]
-        blur_img = cv2.GaussianBlur(cropped, (5, 5), 0)
-        _, hls_l, _ = cv2.split(cv2.cvtColor(blur_img, cv2.COLOR_BGR2HLS))
-        _, hls_l = cv2.threshold(hls_l, 207, 255, cv2.THRESH_BINARY)
+        cropped = img[0:np.int(CROPPED_H), 
+                      np.int(CROPPED_W):np.int(SET_WIDTH - CROPPED_W)]
+        _, hls_l, _ = cv2.split(cv2.cvtColor(cropped, cv2.COLOR_BGR2HLS))
+        _, hls_l = cv2.threshold(hls_l, 205, 255, cv2.THRESH_BINARY)
 
         histogram = np.sum(hls_l[hls_l.shape[0]//2:, :], axis=0)
         current = np.argmax(histogram)
-
-        if current == 0:
-            self.start_flag = 2
 
         window_h = np.int(hls_l.shape[0]/12)
         line_pix_max = LINE_PIX_W_MAX*window_h
@@ -156,6 +157,11 @@ class trace:
         lmark_inds = np.concatenate(lmark_inds)
         rmark_inds = np.concatenate(rmark_inds)
 
+        if len(line_inds) == 0:
+            blind_flag = 1
+        else:
+            blind_flag = 0
+
         if abs(self.save_time - time.time()) > self.hold_time:
             lmark, rmark = self.tell_turnmark(lmark_inds, rmark_inds, cross)
         else:
@@ -169,8 +175,16 @@ class trace:
             cv2.imshow("cam", out_img)
             cv2.waitKey(1)
 
-        line_x = SET_WIDTH/2 - np.mean(line_x)
+        if blind_flag == 0:
+            self.save_curr = np.mean(line_x)
+        
+        line_x = SET_WIDTH/2 - CROPPED_W - self.save_curr
         line_x = np.int(line_x)
+
+        if line_x > 25:
+            line_x = 25
+        if line_x < -25:
+            line_x = -25
 
         return line_x, lmark, rmark
 
