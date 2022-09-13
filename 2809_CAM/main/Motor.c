@@ -21,7 +21,7 @@
 #include "Motor.h"
 
 #define MAX_PWM_VAL		2500
-#define LIMIT_PWM_VAL	1250
+#define LIMIT_PWM_VAL	1000
 
 #define RIGHT_DIR	0x00000002		// 0000 0000 0000 0000  0000 0000 0000 0010
 #define LEFT_DIR	0x00000020		// 0000 0000 0000 0000  0000 0000 0010 0000
@@ -78,8 +78,8 @@ static void _motor_struct_init(MotorData *p_motor)
 
 	p_motor->gain = _IQ17(0.0);
 
-	p_motor->pos_acc = _IQ17(0.5);
-	p_motor->pos_dec = _IQ17(1.5);
+	p_motor->pos_acc = _IQ17(0.001);
+	p_motor->pos_dec = _IQ17(0.025);
 }
 
 static void _motor_handle(void)

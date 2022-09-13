@@ -9,6 +9,8 @@ class Sci:
         self.ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=3)
         self.line = ''
 
+        self.restart = False
+
     def write(self, data):
         #word = '*' + data + '\n'
         word = data
@@ -17,6 +19,9 @@ class Sci:
 
     def read(self):
         for c in self.ser.read():
+            if chr(c) == '#':
+                self.restart = True
+                return
             if chr(c) == '\n':
                 print(self.line)
                 self.line = ''

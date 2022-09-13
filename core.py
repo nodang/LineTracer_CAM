@@ -52,24 +52,46 @@ def signal_handler(sig, frame):
     sc.sci_close()
     lt.linetracing_close()
     print("\ncore exit\n")
-    os.system('killall -9 python')
+    os.system('killall -9 python3')
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
 
 def main():
-    sci_rd_th.thread_start(sc.read)
+    num = int(sys.argv[1])
+    tf = int(sys.argv[2])
 
+    if num > 200:
+        num = 200
+    elif num < 100:
+        num = 100
+
+    if tf == 0:
+        tf = False
+    else:
+        tf = True
+
+    sci_rd_th.thread_start(sc.read)
+    print("start")
     sc.write('g')
     
     while True:
-        data = lt.linetracing_open(150)
+        data = lt.linetracing_open(num, debug=tf)
         data = '*' + data + '\n'
         sc.write(data)
+
+        if sc.restart == True:
+            sci_rd_th.thread_destroy()
+            sc.sci_close()
+            lt.linetracing_close()
+            restart()
 
     sci_rd_th.thread_destroy()
 
     return 0
+
+def restart():
+    os.execl(sys.executable, sys.executable, *sys.argv)
 
 if __name__ == '__main__':
     main()

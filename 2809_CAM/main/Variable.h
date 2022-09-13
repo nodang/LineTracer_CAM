@@ -37,7 +37,7 @@ typedef struct
 {
 	int32 position_i32;
 	int32 velocity_i32;
-
+	
 	unsigned char buf[128];
 } SciData;
 
